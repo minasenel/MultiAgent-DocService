@@ -1,14 +1,38 @@
 import httpx
 
 class LLMClient:
-    def __init__(self, model_name="llama3.2"):
-         # Ollama yerelde bu porttan yayın yapar
+    def __init__(self):
         self.base_url = "http://localhost:11434/api/generate"
-        self.model_name = model_name
+        
+        # En az iki farklı yerel model konfigürasyonu kullanımı 
+        self.models = {
+            "fast": "llama3.2:3b",   # Basit ve hızlı görevler için küçük model 
+            "smart": "llama3.1:8b"   # Karmaşık ve ayrıntılı cevap gerektiren görevler için büyük model 
+        }
 
-    async def ask(self, prompt: str) -> str:
+    def _select_model(self, task_type: str, prompt: str) -> str:
+        """
+        Ajanların görevini ve metin uzunluğunu dikkate alan model seçim fonksiyonu
+        """
+        # Görevin türüne göre seçim 
+        if task_type in ["coding", "calculation", "complex_reasoning"]:
+            return self.models["smart"]
+        
+        # metnin uzunluğuna göre seçim
+        if len(prompt) > 1500:
+            return self.models["smart"]
+        
+        
+        return self.models["fast"]
+
+    async def ask(self, prompt: str, task_type: str = "general") -> str:
+        """
+        Otomatik model seçimi ile Ollama API üzerinden yanıt üretir
+        """
+        selected_model = self._select_model(task_type, prompt)
+        
         payload = {
-            "model": self.model_name,
+            "model": selected_model,
             "prompt": prompt,
             "stream": False
         }
@@ -19,5 +43,4 @@ class LLMClient:
                 response.raise_for_status()
                 return response.json().get("response", "Cevap alınamadı.")
             except Exception as e:
-                return f"Hata oluştu: {str(e)}"
-            
+                return f"Model hatası ({selected_model}): {str(e)}"
