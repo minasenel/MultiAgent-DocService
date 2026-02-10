@@ -1,0 +1,22 @@
+# Python ortamı
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+env/
+.env
+
+# Veritabanı ve Veri (Bunları repoda tutmak istemeyiz)
+chroma_db/
+data/*.pdf
+data/*.txt
+
+# IDE ve İşletim Sistemi
+.DS_Store
+.vscode/
+.idea/
+
+# Loglar ve Geçici Dosyalar
+*.log
+logs/
+temp/
