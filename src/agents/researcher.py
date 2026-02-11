@@ -1,32 +1,40 @@
 from src.llm_client import LLMClient
 from src.tools.search_tool import SearchTool
+from src.utils.vector_store import VectorStoreManager # Yeni aracımızı içe aktarıyoruz
 
 class ResearcherAgent:
-    def __init__(self, client: LLMClient, search_tool: SearchTool):
+    def __init__(self, client: LLMClient, search_tool: SearchTool, vector_store: VectorStoreManager):
         self.client = client
         self.search_tool = search_tool
+        self.vector_store = vector_store # RAG yöneticisini bağladık
 
     async def research(self, query: str) -> str:
         """
-        İnternet aramasını kullanarak bilgi toplar ve 
-        gelen sonuçları analiz ederek bir özet sunar.
+        Hem yerel dökümanları hem de interneti kullanarak hibrit bir araştırma yapar.
         """
-        # 1. Adım: SearchTool ile internetten ham veriyi al
+        # 1. Adım: Yerel Vektör Veritabanında (RAG) Ara
+        rag_docs = self.vector_store.search(query, k=3)
+        # Gelen Document objelerinden sadece içeriği (page_content) alıyoruz
+        rag_context = "\n".join([doc.page_content for doc in rag_docs]) if rag_docs else "Yerel dökümanlarda bilgi bulunamadı."
+        
+        # 2. Adım: İnternet Araması Yap
         search_results = self.search_tool.search(query)
         
-        # 2. Adım: Toplanan veriyi LLM'e (Llama) gönderip anlamlı bir cevap üret
+        # 3. Adım: Tüm Veriyi Llama'ya Sentezlet
         prompt = f"""
-        Aşağıda bir konu hakkında internetten toplanmış bilgiler yer alıyor. 
-        Bu bilgileri kullanarak kullanıcı sorusuna kapsamlı ve doğru bir cevap ver. 
-        Eğer bilgiler yetersizse veya 'sonuç bulunamadı' mesajı gelirse, elinden gelen en iyi genel cevabı ver.
+        Aşağıda kullanıcının sorusu için toplanan hibrit bilgiler yer alıyor. 
+        Bu bilgileri analiz et ve kapsamlı, Türkçe bir yanıt oluştur.
 
         Kullanıcı Sorusu: {query}
         
-        İnternet Sonuçları:
+        [YEREL DÖKÜMANLARDAN GELEN BİLGİLER]:
+        {rag_context}
+        
+        [İNTERNETTEN GELEN GÜNCEL BİLGİLER]:
         {search_results}
         
-        Yanıtın profesyonel, bilgilendirici ve Türkçe olsun.
+        Not: Eğer yerel dökümanlar ile internet bilgileri çelişiyorsa, yerel dökümanlara öncelik ver.
         """
         
-        # Analiz için hızlı ve etkili olan Llama 3.2 3B modelini (fast) kullanıyoruz
+        # Bilgi sentezi için hızlı ve etkili modelimizi kullanıyoruz
         return await self.client.ask(prompt, task_type="general")
