@@ -1,12 +1,13 @@
 from langchain_community.vectorstores import Chroma
 from langchain_ollama import OllamaEmbeddings
+import os
 
 class VectorStoreManager:
     """Vektör veritabanı işlemlerini (kayıt ve arama) yöneten sınıf."""
     
     def __init__(self, chunks=None):
         # Ollama üzerinden Llama 3.2 modelini embedding için kullanıyoruz
-        self.embeddings = OllamaEmbeddings(model="llama3.2")
+        self.embeddings = OllamaEmbeddings(model="nomic-embed-text")
         self.persist_directory = "./chroma_db"
         
         if chunks:
