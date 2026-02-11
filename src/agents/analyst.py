@@ -1,43 +1,42 @@
 import json
 from src.llm_client import LLMClient
 
+
 class QueryAnalyst:
+    """Sorguyu analiz edip hangi node'a gidileceğine karar verir. LangGraph'ın giriş node'udur."""
+
     def __init__(self, client: LLMClient):
         self.client = client
 
     async def analyze(self, query: str) -> dict:
-        """
-        kullanıcının sorgusunu analiz eder ve bir plan oluşturur.
-        """
-        system_prompt = """
-        Sen çok ajanlı bir sistemin planlayıcı ajanısın. Görevin, kullanıcının sorusuna bakarak
-        hangi araçların kullanılması gerektiğini belirlemektir. 
-        
-        Kullanabileceğin araçlar:
-        1. 'web_search': Güncel bilgi veya internetten araştırma gerektiren durumlar.
-        2. 'rag': Yerel dokümanlarda (PDF) bilgi aranması gereken durumlar. 
-        3. 'coding': Hesaplama, veri işleme veya Python kodu çalıştırılması gereken durumlar.
-        
-        Yanıtını SADECE aşağıdaki JSON formatında ver, başka hiçbir metin ekleme:
-        {
-            "task_type": "web_search" | "rag" | "coding" | "general",
-            "reason": "Neden bu aracı seçtiğinin kısa açıklaması",
-            "plan": ["Adım 1...", "Adım 2..."]
-        }
-        """
+        """task_type döndürür: web_search/rag → researcher, coding → coder, aksi halde general."""
+        system_prompt = """Sen çok ajanlı sistemin planlayıcısısın. Kullanıcı sorusuna göre hangi aracın kullanılacağına karar ver.
 
-        prompt = f"{system_prompt}\n\nKullanıcı Sorgusu: {query}"
-        
-        #  analiz görevi hızlı modelimiz llama3.2 ile kolayca yapılabilir. 
-        response = await self.client.ask(prompt, task_type="general")
-        
+Araçlar:
+- web_search veya rag: Sadece bilgi, liste, açıklama; metin cevap yeterli.
+- coding: Sayı, toplam, ortalama, istatistik, hesaplama; veya veri dosyalarından SAYIP/SIRALAYIP cevap (en çok satan, en az, hangisi birinci, kaç adet vb.). Bu tür sorularda mutlaka coding seç; dosyayı okuyup sayan kod gerekir.
+- general: Belirsiz veya sohbet.
+
+Yanıtın SADECE aşağıdaki JSON olsun, başka metin ekleme:
+{"task_type": "web_search"|"rag"|"coding"|"general", "reason": "kısa gerekçe", "plan": ["Adım 1", "Adım 2"]}"""
+
+        response = await self.client.ask(f"{system_prompt}\n\nKullanıcı Sorgusu: {query}", task_type="general")
+
         try:
-            return json.loads(response)
-        #ilerde model eğer json formatında gereksiz açıklama eklerse regex helper function
-        except Exception:
-            # Eğer model JSON formatında hata yaparsa 
-            return {
-                "task_type": "general",
-                "reason": "Format hatası nedeniyle genel cevap moduna geçildi.",
-                "plan": ["Doğrudan cevap üret."]
-            }
+            return json.loads(response.strip())
+        except json.JSONDecodeError:
+            # Model bazen JSON etrafına metin ekler; ilk { ile başlayan en kısa geçerli JSON'u dene
+            start = response.find("{")
+            if start != -1:
+                depth = 0
+                for i, c in enumerate(response[start:], start):
+                    if c == "{":
+                        depth += 1
+                    elif c == "}":
+                        depth -= 1
+                        if depth == 0:
+                            try:
+                                return json.loads(response[start : i + 1])
+                            except json.JSONDecodeError:
+                                break
+            return {"task_type": "general", "reason": "JSON ayrıştırılamadı.", "plan": ["Doğrudan cevap üret."]}

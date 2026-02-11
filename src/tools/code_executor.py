@@ -1,33 +1,46 @@
+import os
 import sys
+import re
 from io import StringIO
 import traceback
 
+
+# Proje kökü: kod ./data/ gibi yollarla çalışsın diye exec öncesi chdir yapılacak
+_PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+
+
 class CodeExecutor:
-    """
-    LLM tarafından üretilen Python kodlarını güvenli bir şekilde 
-    çalıştırır ve çıktıları yakalar.
-    """
+    """LLM çıktısından kodu çıkarır ve proje kökünde çalıştırır (./data/ erişilebilir olur)."""
+
+    def _extract_code(self, code: str) -> str:
+        match = re.search(r"```(?:python)?\s*\n(.*?)```", code, re.DOTALL)
+        if match:
+            return match.group(1).strip()
+        return code.replace("```python", "").replace("```", "").strip()
+
     def execute(self, code: str) -> str:
-        # Kodun içindeki gereksiz markdown işaretlerini temizle
-        clean_code = code.replace("```python", "").replace("```", "").strip()
-        
-        # Standart çıktıyı (print) yakalamak için tampon
+        clean_code = self._extract_code(code)
+        if not clean_code:
+            return "Kod Çalıştırma Hatası: Yanıtta çalıştırılacak kod bloğu bulunamadı."
+
         output_buffer = StringIO()
         old_stdout = sys.stdout
         sys.stdout = output_buffer
-        
-        # Kodun çalışacağı yerel değişkenler sözlüğü
-        local_vars = {}
-        
+        old_cwd = os.getcwd()
+        exc_info = None
+
         try:
-            # Kodu çalıştır
-            exec(clean_code, {"__builtins__": __builtins__}, local_vars)
-            sys.stdout = old_stdout # Çıktıyı normale döndür
-            
-            result = output_buffer.getvalue()
-            return result if result else "Kod başarıyla çalıştı (Çıktı üretilmedi)."
-            
+            os.chdir(_PROJECT_ROOT)
+            exec(clean_code, {"__builtins__": __builtins__}, {})
         except Exception:
+            exc_info = traceback.format_exc()
+        finally:
             sys.stdout = old_stdout
-            # Hata oluşursa hatanın detayı
-            return f"Kod Çalıştırma Hatası:\n{traceback.format_exc()}"
+            os.chdir(old_cwd)
+
+        result = output_buffer.getvalue()
+        if exc_info:
+            return f"Kod Çalıştırma Hatası:\n{exc_info}"
+        if result:
+            return result
+        return "Kod başarıyla çalıştı (Çıktı üretilmedi)."

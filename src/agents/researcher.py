@@ -1,40 +1,59 @@
+import os
+import glob
 from src.llm_client import LLMClient
 from src.tools.search_tool import SearchTool
-from src.utils.vector_store import VectorStoreManager # Yeni aracımızı içe aktarıyoruz
+from src.utils.vector_store import VectorStoreManager
+
+# Proje kökündeki data/ klasörü (main.py ile aynı seviye)
+_PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+DATA_DIR = os.path.join(_PROJECT_ROOT, "data")
 
 class ResearcherAgent:
     def __init__(self, client: LLMClient, search_tool: SearchTool, vector_store: VectorStoreManager):
         self.client = client
         self.search_tool = search_tool
-        self.vector_store = vector_store # RAG yöneticisini bağladık
+        self.vector_store = vector_store
+
+    def _read_data_folder(self) -> str:
+        """data/ klasöründeki tüm .txt ve .md dosyalarını doğrudan okur."""
+        if not os.path.exists(DATA_DIR):
+            return ""
+        parts = []
+        for ext in ["*.txt", "*.md"]:
+            for path in sorted(glob.glob(os.path.join(DATA_DIR, ext))):
+                try:
+                    with open(path, "r", encoding="utf-8") as f:
+                        content = f.read().strip()
+                    if content:
+                        parts.append(f"--- Dosya: {os.path.basename(path)} ---\n{content}")
+                except Exception:
+                    pass
+        return "\n\n".join(parts) if parts else ""
 
     async def research(self, query: str) -> str:
-        """
-        Hem yerel dökümanları hem de interneti kullanarak hibrit bir araştırma yapar.
-        """
-        # 1. Adım: Yerel Vektör Veritabanında (RAG) Ara
-        rag_docs = self.vector_store.search(query, k=3)
-        # Gelen Document objelerinden sadece içeriği (page_content) alıyoruz
-        rag_context = "\n".join([doc.page_content for doc in rag_docs]) if rag_docs else "Yerel dökümanlarda bilgi bulunamadı."
-        
-        # 2. Adım: İnternet Araması Yap
-        search_results = self.search_tool.search(query)
-        
-        # 3. Adım: Tüm Veriyi Llama'ya Sentezlet
-        prompt = f"""
-        Aşağıda kullanıcının sorusu için toplanan hibrit bilgiler yer alıyor. 
-        Bu bilgileri analiz et ve kapsamlı, Türkçe bir yanıt oluştur.
+        """Yerel data/ dosyaları + RAG + internet araması ile yanıt üretir. LangGraph researcher node bu metodu çağırır."""
+        direct_data = self._read_data_folder()
+        rag_docs = self.vector_store.search(query, k=5)
+        rag_context = "\n".join([d.page_content for d in rag_docs]) if rag_docs else ""
 
-        Kullanıcı Sorusu: {query}
-        
-        [YEREL DÖKÜMANLARDAN GELEN BİLGİLER]:
-        {rag_context}
-        
-        [İNTERNETTEN GELEN GÜNCEL BİLGİLER]:
-        {search_results}
-        
-        Not: Eğer yerel dökümanlar ile internet bilgileri çelişiyorsa, yerel dökümanlara öncelik ver.
-        """
-        
-        # Bilgi sentezi için hızlı ve etkili modelimizi kullanıyoruz
+        if direct_data:
+            local_context = f"""[DATA KLASÖRÜNDEKİ DOSYALAR]
+{direct_data}
+
+[RAG SONUÇLARI]
+{rag_context or "Ek eşleşme yok."}"""
+        else:
+            local_context = rag_context or "Yerel dökümanlarda ilgili bilgi bulunamadı."
+
+        search_results = self.search_tool.search(query)
+
+        prompt = f"""Kullanıcı sorusu: {query}
+
+[YEREL DÖKÜMANLAR - ÖNCELİKLİ]
+{local_context}
+
+[İNTERNET]
+{search_results}
+
+Yukarıdaki bilgilerle Türkçe, net bir yanıt ver. Yerel dosya verileri ile internet bilgisi çelişirse yerel veriyi önceliklendir."""
         return await self.client.ask(prompt, task_type="general")

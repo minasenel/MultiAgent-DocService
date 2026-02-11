@@ -6,7 +6,7 @@ class LLMClient:
         
         # En az iki farklı yerel model konfigürasyonu kullanımı 
         self.models = {
-            "fast": "llama3.2:3b",   # Basit ve hızlı görevler için küçük model 
+            "fast": "llama3.2:latest",   # Basit ve hızlı görevler için küçük model 
             "smart": "llama3.1:8b"   # Karmaşık ve ayrıntılı cevap gerektiren görevler için büyük model 
         }
 

@@ -8,31 +8,33 @@ class CoderAgent:
 
     async def solve(self, query: str) -> str:
         """
-        Kullanıcının sorusunu çözmek için Python kodu yazar, 
-        çalıştırır ve sonucu analiz eder.
+        Kullanıcının sorusunu çözmek için Python kodu yazar, çalıştırır ve sonucu döndürür.
+        Kod yazımı her zaman 'smart' (ileri) model ile yapılır.
         """
-        # 1. Adım: Kod Yazdırma (Burada 'smart' model yani llama 3.1  devreye girer)
-        prompt = f"""
-        Sen uzman bir Python yazılımcısısın. Aşağıdaki soruyu çözmek için SADECE Python kodu yaz.
-        - Kodu yazarken 'print()' kullanarak sonucu ekrana basmayı unutma.
-        - Yanıtında SADECE kod olsun, açıklama yapma.
-        - Kod bloklarını ```python ... ``` içine al.
+        prompt = f"""Sen uzman bir Python programcısısın. Aşağıdaki soruyu çözmek için yalnızca çalıştırılabilir Python kodu yaz.
 
-        Soru: {query}
-        """
+Kurallar:
+- Yanıtında SADECE tek bir ```python ... ``` bloğu olsun; açıklama veya örnek çıktı yazma.
+- Kod tam ve çalışır olsun: open() ile dosya oku, parse et, hesapla, print() ile sonucu yazdır. Placeholder veya "..." kullanma.
+- Veri ./data/ klasöründe; metin/kelime eşleştirmede büyük/küçük harfe duyarsız ol (örn. .lower() veya re.IGNORECASE).
+
+Soru: {query}"""
         
-        # Kod yazımı hata kabul etmez, bu yüzden 'smart' modeli tetikliyoruz
         code_response = await self.client.ask(prompt, task_type="coding")
         
-        # 2. Adım: Kodu Çalıştırma
+        # 2. Adım: Markdown içinden kodu çıkar ve çalıştır
         execution_result = self.executor.execute(code_response)
         
-        # 3. Adım: Sonucu Kullanıcıya Açıklama
-        final_prompt = f"""
-        Kullanıcının sorusu: {query}
-        Yazılan kodun çıktısı: {execution_result}
+        # 3. Adım: Hata varsa bir kez düzeltmeyi dene (yine smart model)
+        if "Kod Çalıştırma Hatası" in execution_result:
+            fix_prompt = f"""Kullanıcı sorusu: {query}
+Üretilen kod (hata veriyor): {code_response}
+Hata: {execution_result}
+Bu hatayı gideren, çalışan tam Python kodunu yaz. Yanıtında SADECE ```python ... ``` bloğu olsun."""
+            code_response = await self.client.ask(fix_prompt, task_type="coding")
+            execution_result = self.executor.execute(code_response)
         
-        Bu sonucu kullanıcıya nazikçe ve Türkçe olarak açıkla.
-        """
-        
+        final_prompt = f"""Kullanıcı sorusu: {query}
+Kod çalıştırma çıktısı: {execution_result}
+Bu çıktıyı kullanarak kısa, Türkçe bir özet ver. Çıktıda sayı varsa ona göre cevap ver; uydurma yapma."""
         return await self.client.ask(final_prompt, task_type="general")
