@@ -8,8 +8,7 @@ env/
 
 # Veritabanı ve Veri (Bunları repoda tutmak istemeyiz)
 chroma_db/
-data/*.pdf
-data/*.txt
+goals.txt
 
 # IDE ve İşletim Sistemi
 .DS_Store

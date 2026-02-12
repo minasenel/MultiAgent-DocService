@@ -15,11 +15,11 @@ class ResearcherAgent:
         self.vector_store = vector_store
 
     def _read_data_folder(self) -> str:
-        """data/ klasöründeki tüm .txt ve .md dosyalarını doğrudan okur."""
+        """data/ klasöründeki tüm .txt, .md ve .json dosyalarını doğrudan okur."""
         if not os.path.exists(DATA_DIR):
             return ""
         parts = []
-        for ext in ["*.txt", "*.md"]:
+        for ext in ["*.txt", "*.md", "*.json"]:
             for path in sorted(glob.glob(os.path.join(DATA_DIR, ext))):
                 try:
                     with open(path, "r", encoding="utf-8") as f:
@@ -49,11 +49,15 @@ class ResearcherAgent:
 
         prompt = f"""Kullanıcı sorusu: {query}
 
-[YEREL DÖKÜMANLAR - ÖNCELİKLİ]
+[YEREL DÖKÜMANLAR - ÖNCELİKLİ - MUTLAKA BURAYA BAK]
 {local_context}
 
 [İNTERNET]
 {search_results}
 
-Yukarıdaki bilgilerle Türkçe, net bir yanıt ver. Yerel dosya verileri ile internet bilgisi çelişirse yerel veriyi önceliklendir."""
+Kurallar:
+- ÖNCE yukarıdaki [YEREL DÖKÜMANLAR] bölümünde cevabı ara. Özellikle welcome.txt, menu.json, orders.json, reviews.json dosyalarına bak.
+- Eğer yerel dosyalarda net bir cevap varsa, onu doğrudan kullan. İnternet sonuçlarını görmezden gel.
+- Yerel dosyalarda bilgi yoksa veya belirsizse, internet sonuçlarını kullan.
+- Türkçe, net ve kısa bir yanıt ver. Yerel dosyadan bulduğun bilgiyi kelimesi kelimesine kullan; uydurma yapma."""
         return await self.client.ask(prompt, task_type="general")

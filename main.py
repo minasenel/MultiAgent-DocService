@@ -1,4 +1,5 @@
 from dotenv import load_dotenv
+
 load_dotenv()
 
 import asyncio
@@ -6,7 +7,7 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.live import Live
 from rich.spinner import Spinner
-
+from langfuse import get_client
 
 from src.llm_client import LLMClient
 from src.agents.analyst import QueryAnalyst
@@ -21,6 +22,7 @@ import os
 import glob
 
 console = Console()
+langfuse = get_client()
 
 def load_data_files(vector_store: VectorStoreManager):
     """Data klasöründeki tüm dosyaları vector store'a yükler."""
@@ -29,7 +31,7 @@ def load_data_files(vector_store: VectorStoreManager):
         return
     
     # Desteklenen dosya formatları
-    supported_extensions = ["*.txt", "*.md", "*.pdf"]
+    supported_extensions = ["*.txt", "*.md", "*.pdf", "*.json"]
     all_chunks = []
     
     for ext in supported_extensions:
@@ -75,9 +77,21 @@ async def main():
             break
 
         try:
-            with Live(Spinner("dots", text="Analiz ediliyor...", style="cyan"), refresh_per_second=10):
-                result = await graph.ainvoke({"query": user_query})
-            response = result.get("response", "Yanıt üretilemedi.")
+            # Her kullanıcı sorusu için Langfuse trace/span
+            with langfuse.start_as_current_observation(
+                as_type="span",
+                name="user_query",
+                input=user_query,
+            ) as span:
+                with Live(
+                    Spinner("dots", text="Analiz ediliyor...", style="cyan"),
+                    refresh_per_second=10,
+                ):
+                    result = await graph.ainvoke({"query": user_query})
+
+                response = result.get("response", "Yanıt üretilemedi.")
+                span.update(output=response)
+
             console.print(Panel(response, title="[bold green]Agent Yanıtı[/bold green]", border_style="green"))
         except Exception as e:
             console.print(f"[bold red]Bir hata oluştu: {e}[/bold red]")

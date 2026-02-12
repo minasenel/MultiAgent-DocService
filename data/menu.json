@@ -1,0 +1,57 @@
+{
+  "donem": "Şubat 2026",
+  "pizzalar": [
+    {
+      "ad": "Margherita",
+      "fiyat": 95,
+      "vejetaryen": true,
+      "etiketler": ["Vejetaryen", "Klasik"],
+      "aciklama": "Domates sosu, mozzarella, fesleğen",
+      "glutensiz_mevcut": true
+    },
+    {
+      "ad": "Pepperoni",
+      "fiyat": 120,
+      "vejetaryen": false,
+      "etiketler": ["Etli", "Popüler"],
+      "aciklama": "Domates sosu, mozzarella, pepperoni salam",
+      "glutensiz_mevcut": false
+    },
+    {
+      "ad": "Vegetariana",
+      "fiyat": 110,
+      "vejetaryen": true,
+      "etiketler": ["Vejetaryen"],
+      "aciklama": "Domates, biber, mantar, soğan, zeytin, mısır",
+      "glutensiz_mevcut": true
+    },
+    {
+      "ad": "Marinara",
+      "fiyat": 85,
+      "vejetaryen": true,
+      "etiketler": ["Vejetaryen", "Glutensiz hamur seçenekli"],
+      "aciklama": "Domates sosu, sarımsak, kekik, zeytinyağı (peynirsiz)",
+      "glutensiz_mevcut": true
+    },
+    {
+      "ad": "Napoletana",
+      "fiyat": 100,
+      "vejetaryen": true,
+      "etiketler": ["Vejetaryen", "Klasik"],
+      "aciklama": "Domates, mozzarella, ançüez, kapari",
+      "glutensiz_mevcut": false
+    },
+    {
+      "ad": "Calabresa",
+      "fiyat": 118,
+      "vejetaryen": false,
+      "etiketler": ["Etli"],
+      "aciklama": "Calabria salamı, mozzarella, domates sosu",
+      "glutensiz_mevcut": false
+    }
+  ],
+  "notlar": {
+    "glutensiz_ek_ucret": 15,
+    "glutensiz_mevcut_pizzalar": ["Marinara", "Margherita", "Vegetariana"]
+  }
+}
