@@ -29,7 +29,7 @@ def load_data_files(vector_store: VectorStoreManager):
         return
     
     # Desteklenen dosya formatları
-    supported_extensions = ["*.txt", "*.md", "*.pdf"]
+    supported_extensions = ["*.txt", "*.md", "*.pdf", "*.json"]
     all_chunks = []
     
     for ext in supported_extensions:

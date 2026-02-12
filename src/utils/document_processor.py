@@ -16,10 +16,10 @@ class DocumentProcessor:
         ext = os.path.splitext(self.file_path)[-1].lower()
         if ext == ".pdf":
             loader = PyPDFLoader(self.file_path)
-        elif ext in (".txt", ".md"):
+        elif ext in (".txt", ".md", ".json"):
             loader = TextLoader(self.file_path, encoding="utf-8")
         else:
-            raise ValueError(f"Desteklenmeyen format: {ext}. PDF, TXT veya MD kullanın.")
+            raise ValueError(f"Desteklenmeyen format: {ext}. PDF, TXT, MD veya JSON kullanın.")
 
         try:
             documents = loader.load()
