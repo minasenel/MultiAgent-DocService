@@ -49,11 +49,15 @@ class ResearcherAgent:
 
         prompt = f"""Kullanıcı sorusu: {query}
 
-[YEREL DÖKÜMANLAR - ÖNCELİKLİ]
+[YEREL DÖKÜMANLAR - ÖNCELİKLİ - MUTLAKA BURAYA BAK]
 {local_context}
 
 [İNTERNET]
 {search_results}
 
-Yukarıdaki bilgilerle Türkçe, net bir yanıt ver. Yerel dosya verileri ile internet bilgisi çelişirse yerel veriyi önceliklendir."""
+Kurallar:
+- ÖNCE yukarıdaki [YEREL DÖKÜMANLAR] bölümünde cevabı ara. Özellikle welcome.txt, menu.json, orders.json, reviews.json dosyalarına bak.
+- Eğer yerel dosyalarda net bir cevap varsa, onu doğrudan kullan. İnternet sonuçlarını görmezden gel.
+- Yerel dosyalarda bilgi yoksa veya belirsizse, internet sonuçlarını kullan.
+- Türkçe, net ve kısa bir yanıt ver. Yerel dosyadan bulduğun bilgiyi kelimesi kelimesine kullan; uydurma yapma."""
         return await self.client.ask(prompt, task_type="general")

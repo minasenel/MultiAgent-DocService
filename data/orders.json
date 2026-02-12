@@ -1,0 +1,16 @@
+{
+  "donem": "3-9 Şubat 2026",
+  "toplam_musteri": 10,
+  "siparisler": [
+    {"musteri_no": 1, "isim": "Elif Kaya", "yas_grubu": "genç", "siparisler": [{"pizza": "Margherita", "adet": 1}]},
+    {"musteri_no": 2, "isim": "Mehmet Demir", "yas_grubu": "yetişkin", "siparisler": [{"pizza": "Pepperoni", "adet": 2}]},
+    {"musteri_no": 3, "isim": "Zeynep Arslan", "yas_grubu": "yetişkin", "siparisler": [{"pizza": "Quattro Formaggi", "adet": 1}]},
+    {"musteri_no": 4, "isim": "Can Öztürk", "yas_grubu": "genç", "siparisler": [{"pizza": "Vegetariana", "adet": 1}, {"pizza": "Marinara", "adet": 1}]},
+    {"musteri_no": 5, "isim": "Fatma Çelik", "yas_grubu": "ileri yaş", "siparisler": [{"pizza": "Margherita", "adet": 1}]},
+    {"musteri_no": 6, "isim": "Emre Yıldız", "yas_grubu": "yetişkin", "siparisler": [{"pizza": "Diavola", "adet": 2}]},
+    {"musteri_no": 7, "isim": "Seda Aydın", "yas_grubu": "genç", "siparisler": [{"pizza": "Capricciosa", "adet": 1}]},
+    {"musteri_no": 8, "isim": "Burak Şahin", "yas_grubu": "yetişkin", "siparisler": [{"pizza": "Napoletana", "adet": 1}, {"pizza": "Funghi", "adet": 1}]},
+    {"musteri_no": 9, "isim": "Deniz Koç", "yas_grubu": "çocuk", "siparisler": [{"pizza": "Margherita", "adet": 1}]},
+    {"musteri_no": 10, "isim": "Aslı Polat", "yas_grubu": "yetişkin", "siparisler": [{"pizza": "Calabresa", "adet": 2}]}
+  ]
+}

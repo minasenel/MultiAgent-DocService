@@ -21,7 +21,54 @@ Kurallar:
   * JSON dosyaları için: import json ile json.load() kullan (örn: menu.json, orders.json, reviews.json, expenses.json)
   * Metin dosyaları için: open() ile oku ve parse et
 - JSON şemaları:
-  * orders.json: kök dict; \"siparisler\" anahtarı altında müşteri listesi vardır. Her müşteri kaydında \"siparisler\" listesi ve her öğede \"pizza\" (str) ve \"adet\" (int) alanları bulunur. Toplam pizza adedi için TÜM müşteriler ve TÜM \"siparisler\" içindeki \"adet\" değerlerini topla.\n    Örnek Python iskeleti:\n    import json\n    with open(\"./data/orders.json\", encoding=\"utf-8\") as f:\n        data = json.load(f)\n    total = 0\n    for order in data[\"siparisler\"]:\n        for item in order[\"siparisler\"]:\n            total += item[\"adet\"]\n    print(total)\n  * menu.json: kök dict; \"pizzalar\" listesinde her öğede en az \"ad\" (str) ve \"fiyat\" (int) alanları bulunur.\n  * expenses.json: kök dict; \"haftalik_toplam_gider\" anahtarı haftalık toplam gideri içerir.
+  * orders.json: kök dict; \"siparisler\" anahtarı altında müşteri listesi vardır. Her müşteri kaydında:
+      - \"musteri_no\" (int)
+      - \"isim\" (str)
+      - \"yas_grubu\" (str)
+      - \"siparisler\" (liste, içinde {{\"pizza\": str, \"adet\": int}})
+    DİKKAT: Alan adı \"isim\"dir, asla \"name\" değildir. Bir müşteriyi isme göre ararken:
+      - hem sorguyu hem de order[\"isim\"] değerini .lower() ile küçült ve karşılaştır.
+    Örnek Python iskeleti (isimden sipariş bulmak için):
+      import json
+      with open(\"./data/orders.json\", encoding=\"utf-8\") as f:
+          data = json.load(f)
+      target_name = \"fatma çelik\"
+      for order in data[\"siparisler\"]:
+          if order[\"isim\"].lower() == target_name:
+              print(order[\"siparisler\"])
+              break
+  * reviews.json: kök dict; \"puanlar\" anahtarı altında müşteri değerlendirmeleri listesi vardır. Her kayıtta:
+      - \"musteri_no\" (int)
+      - \"isim\" (str)
+      - \"hiz\" (int)
+      - \"lezzet\" (int)
+      - \"sunum\" (int)
+      - \"hizmet\" (int)
+      - \"kalabalik\" (int)
+    DİKKAT: Bu JSON'da TARİH ALANI YOKTUR. Asla review[\"tarih\"] veya benzeri alanlara erişmeye çalışma.
+    \"3-9 Şubat aralığı\" gibi ifadeler sadece dönem açıklamasıdır; ortalama hesaplamak için TÜM kayıtlardaki ilgili puanları kullan.
+    Örnek Python iskeleti (musteri_no ile bir puanı bulmak için):
+      import json
+      with open(\"./data/reviews.json\", encoding=\"utf-8\") as f:
+          data = json.load(f)
+      target_no = 9
+      for review in data[\"puanlar\"]:
+          if review[\"musteri_no\"] == target_no:
+              print(review[\"hiz\"])
+              break
+    Örnek Python iskeleti (tüm müşteriler için ortalama \"hiz\" puanını bulmak için):
+      import json
+      with open(\"./data/reviews.json\", encoding=\"utf-8\") as f:
+          data = json.load(f)
+      total = 0
+      count = 0
+      for review in data[\"puanlar\"]:
+          total += review[\"hiz\"]
+          count += 1
+      avg = total / count if count > 0 else 0
+      print(avg)
+  * menu.json: kök dict; \"pizzalar\" listesinde her öğede en az \"ad\" (str) ve \"fiyat\" (int) alanları bulunur.
+  * expenses.json: kök dict; \"haftalik_toplam_gider\" anahtarı haftalık toplam gideri içerir.
 - Metin/kelime eşleştirmede büyük/küçük harfe duyarsız ol (örn. .lower() veya re.IGNORECASE).
 
 Soru: {query}"""
@@ -43,6 +90,16 @@ Hata: {execution_result}
 Yukarıdaki JSON şemalarını dikkate alarak bu hatayı gideren, çalışan tam Python kodunu yaz. Yanıtında SADECE ```python ... ``` bloğu olsun."""
             code_response = await self.client.ask(fix_prompt, task_type="coding")
             execution_result = self.executor.execute(code_response)
+
+        # Eğer çıktı sade bir sayı ise, doğrudan onu döndür (özet için modele gitme)
+        numeric_output = execution_result.strip()
+        # Sona eklenmiş satır sonlarını veya boşlukları temizle
+        try:
+            # Tam sayı olarak parse edebiliyorsak, direkt sayıyı string olarak döndür
+            int_value = int(numeric_output)
+            return str(int_value)
+        except ValueError:
+            pass
 
         if "Kod Çalıştırma Hatası" in execution_result:
             final_prompt = f"""Kullanıcı sorusu: {query}

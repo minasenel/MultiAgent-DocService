@@ -1,0 +1,4 @@
+Her hafta Cuma günü "Pizza Friday" etkinliği yapılmaktadır. Bu etkinlikte her Sipariş totaline 10% indirim yapılmaktadır.
+Ayın 13'ünde Çalışan Primleri yatacaktır.
+Her bir çalışanın haftalık 1 gün izin hakkı bulunmaktadır. 
+Gün sonu temizlik işini o gün en geç gelen çalışan yapacaktır. 

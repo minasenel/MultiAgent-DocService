@@ -1,0 +1,16 @@
+{
+  "donem": "3-9 Şubat 2026",
+  "toplam_musteri": 10,
+  "puanlar": [
+    {"musteri_no": 1, "isim": "Elif Kaya", "hiz": 5, "lezzet": 5, "sunum": 4, "hizmet": 5, "kalabalik": 2},
+    {"musteri_no": 2, "isim": "Mehmet Demir", "hiz": 4, "lezzet": 4, "sunum": 5, "hizmet": 4, "kalabalik": 4},
+    {"musteri_no": 3, "isim": "Zeynep Arslan", "hiz": 3, "lezzet": 5, "sunum": 5, "hizmet": 4, "kalabalik": 3},
+    {"musteri_no": 4, "isim": "Can Öztürk", "hiz": 4, "lezzet": 4, "sunum": 4, "hizmet": 5, "kalabalik": 2},
+    {"musteri_no": 5, "isim": "Fatma Çelik", "hiz": 5, "lezzet": 5, "sunum": 5, "hizmet": 5, "kalabalik": 1},
+    {"musteri_no": 6, "isim": "Emre Yıldız", "hiz": 3, "lezzet": 5, "sunum": 4, "hizmet": 3, "kalabalik": 5},
+    {"musteri_no": 7, "isim": "Seda Aydın", "hiz": 4, "lezzet": 4, "sunum": 5, "hizmet": 4, "kalabalik": 3},
+    {"musteri_no": 8, "isim": "Burak Şahin", "hiz": 5, "lezzet": 5, "sunum": 4, "hizmet": 5, "kalabalik": 2},
+    {"musteri_no": 9, "isim": "Deniz Koç", "hiz": 4, "lezzet": 5, "sunum": 5, "hizmet": 5, "kalabalik": 3},
+    {"musteri_no": 10, "isim": "Aslı Polat", "hiz": 3, "lezzet": 4, "sunum": 3, "hizmet": 4, "kalabalik": 4}
+  ]
+}
