@@ -195,6 +195,63 @@ Bu komut:
 - Uygulama açılırken `data/` klasörünü yeniden okur ve yeni `chroma_db` oluşturur.
 
 
+## Birim Testleri
+
+Testler `tests/` klasöründe **pytest** ile yazılmıştır. Hem normal akışları hem de öngörülebilir hata durumlarını kapsar; bu senaryolarda üretilen **anlamlı hata mesajları** testlerle doğrulanır.
+
+### Neler test ediliyor?
+
+| Bileşen | Normal akış | Hata senaryoları |
+|--------|-------------|------------------|
+| **LLMClient** | Model seçimi (coding → smart, general/kısa → fast, uzun prompt → smart), başarılı `ask` yanıtı | API 404/500 (geçersiz veya yüklü olmayan model): "Model hatası (model_adı): ..." mesajı |
+| **QueryAnalyst** | Geçerli JSON ile `task_type` (coding, rag, web_search), metin içinde gömülü JSON çıkarımı | Boş sorgu, bozuk JSON: fallback `task_type: general` ve "JSON ayrıştırılamadı." gerekçesi |
+| **CodeExecutor** | ```python``` bloğu çalıştırma, ham kod, çıktı yoksa bilgilendirici mesaj | Boş/eksik kod bloğu: "Kod Çalıştırma Hatası: ... kod bloğu bulunamadı"; sözdizimi/çalışma hatası: traceback ile anlamlı mesaj |
+| **SearchTool** | — | Tüm kaynaklar başarısız: "ulaşılamıyor", "TAVILY_API_KEY" veya "tekrar deneyin" içeren mesaj; Tavily hata mesajı üçlüde taşınır |
+| **CoderAgent** | Sayısal çıktı doğrudan dönüş, metin çıktı için LLM özeti | Executor çıktı üretmezse veya iki kez hata verirse: anlamlı hata/özet mesajı |
+| **ResearcherAgent** | LLM yanıtı, arama sonucunun prompt'a geçmesi | Arama "ulaşılamıyor" mesajı döndürse bile yerel bağlamla cevap üretimi |
+
+### (a) Normal akış senaryoları — nasıl karşılanıyor?
+
+- **LLMClient:** `_select_model` ile task_type ve prompt uzunluğuna göre doğru model seçilir; `ask` başarılı HTTP yanıtında gelen metin döner.
+- **QueryAnalyst:** LLM geçerli JSON döndürdüğünde `task_type`, `reason`, `plan` alanları assert edilir; JSON metin içinde gömülüyse çıkarılıp parse edildiği test edilir.
+- **CodeExecutor:** Geçerli kod bloğunun stdout'u, çıktı olmadığında ise "Kod başarıyla çalıştı (Çıktı üretilmedi)." mesajı doğrulanır.
+- **CoderAgent / ResearcherAgent:** Mock client ve araçlarla başarılı akışta dönen cevap ve prompt içeriği kontrol edilir.
+
+### (b) Öngörülebilir hata durumları — nasıl karşılanıyor?
+
+- **Geçersiz model seçimi / API hatası:** Ollama'da olmayan model veya 404/500 yanıtı simüle edilir; dönen stringte "Model hatası" ve seçilen model adı assert edilir.
+- **Eksik veya hatalı giriş formatı:** Analyst'e boş veya geçersiz JSON döndüren mock verilir; fallback dict ve "JSON ayrıştırılamadı." gerekçesi test edilir. CodeExecutor'a boş blok veya kod olmayan giriş verilir; "kod bloğu bulunamadı" veya SyntaxError/traceback mesajı doğrulanır.
+- **Tool çağrısından dönen hata:** SearchTool tüm kaynaklar kapalıyken anlamlı mesaj ve kaynak "yok" döner; Tavily hata mesajı üçlüde taşınır. CodeExecutor sözdizimi/çalışma hatası döndürür; CoderAgent'ta executor iki kez hata verince veya çıktı üretmeyince son özet/hata mesajı assert edilir. Researcher'da arama hata mesajı döndürse bile akışın devam ettiği test edilir.
+
+### (c) Anlamlı hata mesajları — nasıl doğrulanıyor?
+
+Her hata senaryosunda testler, kullanıcıya veya geliştiriciye anlamlı bilgi veren ifadeleri **metin üzerinde assert** eder:
+
+- Model/API: `"Model hatası"`, model adı.
+- Analyst: `"JSON ayrıştırılamadı."`, `"Doğrudan cevap üret."` planı.
+- CodeExecutor: `"Kod Çalıştırma Hatası"`, `"kod bloğu bulunamadı"`, `"SyntaxError"` / `"ZeroDivisionError"` veya traceback.
+- SearchTool: `"ulaşılamıyor"`, `"TAVILY_API_KEY"` veya `"tekrar deneyin"`.
+- CoderAgent: Çıktı yok veya tekrarlayan hata sonrası dönen özette hata ile ilgili anahtar kelimeler.
+
+Böylece hata mesajları sadece üretilmiş olmakla kalmaz; değişiklik yapıldığında bozulmaları testler yakalar.
+
+### Testler neden önemli?
+
+- **Regresyonu önler:** Model seçimi, routing, JSON parsing veya tool hata davranışı değiştiğinde testler kırarak fark ettirir.
+- **Hata davranışını sözleşme haline getirir:** "Geçersiz model" veya "kod bloğu bulunamadı" gibi mesajlar testte sabitlendiği için kullanıcıya tutarlı geri bildirim verilir.
+- **Refactoring güveni verir:** Ajanları veya araçları yeniden düzenlerken mevcut davranışın korunduğu testlerle doğrulanır.
+- **Dokümantasyon işlevi görür:** Test isimleri ve assert'ler, sistemin normal ve hata durumlarında ne yaptığını özetler.
+
+### Testleri çalıştırma
+
+Sanal ortam aktifken, proje kökünde:
+
+```bash
+pip install pytest pytest-asyncio   # gerekirse
+PYTHONPATH=. pytest tests/ -v --tb=short
+```
+
+
 ## Basit Çalışma Akışı (Algoritma)
 
 1. **Kullanıcı girişi**

@@ -126,3 +126,5 @@ yarl==1.22.0
 zipp==3.23.0
 zstandard==0.25.0
 langfuse==3.14.1
+pytest==8.3.4
+pytest-asyncio==0.24.0
