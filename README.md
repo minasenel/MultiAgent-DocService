@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="images/cs2.png" alt="Multi-Agent Local DocService" width="800" />
+</p>
+
 ## Multi‑Agent Local DocService
 
 Bu proje, yerel LLM’ler (Ollama) ve LangGraph kullanarak inşa edilmiş, çok ajanlı bir **doküman asistanı (DocService)**’tir.  
